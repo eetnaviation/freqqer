@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "freqqer",
+  "version": "${version}",
+  "name": "freqqer",
+  "description": "freqs the freqqer",
+  "authors": [
+    "velend"
+  ],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/freqqer/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "eu.velend.freqqer.client.FreqqerClient"
+    ],
+    "main": [
+      "eu.velend.freqqer.Freqqer"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
