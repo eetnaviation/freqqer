@@ -17,6 +17,7 @@ public class FreqqerClient implements ClientModInitializer {
      */
     @Override
     public void onInitializeClient() {
+
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             MinecraftClient mc = MinecraftClient.getInstance();
             if (mc.player != null) {
