@@ -21,7 +21,6 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'  # Use Temurin for OpenJDK 21
-
       - name: Cache Gradle dependencies
         uses: actions/cache@v3
         with:
@@ -31,6 +30,9 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Make ./gradlew executable
         run: chmod +x ./gradlew
+        
+      - name: Clean previous gradle artifacts
+        run: ./gradlew clean
         
       - name: Set up gradle and mod dependencies
         run: ./gradlew --refresh-dependencies
