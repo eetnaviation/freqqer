@@ -34,10 +34,15 @@ public class FreqqerClient implements ClientModInitializer {
             }
         });
 
-        // Register a global packet receiver
-        ClientPlayNetworking.registerGlobalReceiver(Identifier.of("example:log_packets"), (client, handler, buf, responseSender) -> {
+//        String chatMessage = packet.getContent().getString();
+//        System.out.println("Server Message: " + chatMessage);
+
+        /*ClientPlayNetworking.registerGlobalReceiver(Identifier.of("example:log_packets"), (client, handler, buf, responseSender) -> {
             MinecraftClient.getInstance().execute(() -> {
-                PacketByteBuf packetByteBuf = (PacketByteBuf) buf;
+                PacketByteBuf packetByteBuf = new(bytes.buffer);
+                packetByteBuf.setBytes(buf);
+                ByteBuf byteBuf = new ByteBuf();
+
                 PacketUtils packetUtils = new PacketUtils();
 
                 byte[] packetDataBytes = packetUtils.ReadPacketByteBufDataArray(packetByteBuf);
@@ -48,6 +53,6 @@ public class FreqqerClient implements ClientModInitializer {
                     mc.player.sendMessage(Text.literal("Packet received: " + packetData), false);
                 }
             });
-        });
+        });*/
     }
 }
