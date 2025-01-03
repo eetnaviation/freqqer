@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "freqqer",
-  "version": "1.3-BETA",
+  "version": "1.4",
   "name": "freqqer",
   "description": "freqs the freqqer",
   "authors": [
@@ -22,6 +22,6 @@
   "depends": {
     "fabricloader": ">=0.16.9",
     "fabric": "*",
-    "minecraft": "1.21.3"
+    "minecraft": "1.21.4"
   }
 }
