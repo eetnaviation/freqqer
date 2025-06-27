@@ -20,7 +20,6 @@ public class FreqqerClient implements ClientModInitializer {
                 if (networkHandler != null) {
                     serverIp = networkHandler.getConnection().getAddress().toString();
                 }
-
                 mc.player.sendMessage(Text.of(("[FREQQER] Connected to server, Got IP: " + serverIp)), false);
             }
         });
