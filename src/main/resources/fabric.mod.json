@@ -7,7 +7,10 @@
   "authors": [
     "velend"
   ],
-  "contact": {},
+  "contact": {
+    "homepage": "https://github.com/eetnaviation/freqqer",
+    "sources": "https://github.com/eetnaviation/freqqer"
+  },
   "license": "All-Rights-Reserved",
   "icon": "assets/freqqer/icon.png",
   "environment": "*",
