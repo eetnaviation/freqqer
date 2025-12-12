@@ -121,6 +121,9 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
 
+      - name: List artifacts
+        run: ls build/libs/
+
       - name: Generate Release Notes and Upload Files
         uses: softprops/action-gh-release@v2
         with:
