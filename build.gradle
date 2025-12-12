@@ -1,21 +1,14 @@
 plugins {
-    id 'fabric-loom' version '1.14-SNAPSHOT'
+    id 'fabric-loom' version '1.14.6' // Using the stable version from your last output
     id 'maven-publish'
 }
 
 version = project.mod_version
 group = project.maven_group
 
-base {
-    archivesName = project.archives_base_name
-}
-
 repositories {
     // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+    // Loom adds essential repos for Minecraft automatically.
 }
 
 dependencies {
@@ -28,52 +21,55 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
-processResources {
+tasks.processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version
     inputs.property "loader_version", project.loader_version
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
+        expand(
+                "version": project.version,
                 "minecraft_version": project.minecraft_version,
                 "loader_version": project.loader_version
+        )
     }
 }
 
 def targetJavaVersion = 21
-tasks.withType(JavaCompile).configureEach {
-    // ensure that the encoding is set to UTF-8, no matter what the system default is
-    // this fixes some edge cases with special characters not displaying correctly
-    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-    // If Javadoc is generated, this must be specified in that task too.
-    it.options.encoding = "UTF-8"
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        it.options.release.set(targetJavaVersion)
-    }
-}
 
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    // Defines the JDK version used for compilation and execution (e.g., compileJava, test)
+    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+
+    // Ensures that the compiled bytecode is compatible with the target version,
+    // which is often the same as the toolchain for modding projects.
+    // You can set options.release to an older version (e.g., 17) if your mod must run
+    // on a JVM older than 21, but your build process uses JDK 21.
+    tasks.withType(JavaCompile).configureEach {
+        it.options.release.set(targetJavaVersion)
+        it.options.encoding = "UTF-8"
     }
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
+
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task
     withSourcesJar()
 }
 
-jar {
+tasks.jar {
+    // FIX: Use the modern 'archiveBaseName' property.
+    // This value now sets the base name for the generated JAR.
+    archiveBaseName = project.archives_base_name
+
+    // FIX: Use 'archiveBaseName.get()' to safely read the value in the rename block.
     from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}"}
+        rename { "${it}_${archiveBaseName.get()}" }
     }
 }
 
-// configure the maven publication
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
+            // FIX: Use the project property directly, as the base block is gone.
             artifactId = project.archives_base_name
             from components.java
         }
@@ -82,8 +78,5 @@ publishing {
     // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
         // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
     }
 }
