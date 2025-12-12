@@ -38,13 +38,15 @@ jobs:
       - name: Make ./gradlew executable
         run: chmod +x ./gradlew
 
-      # --- 2. GET VERSIONS ---
+      # --- 2. GET VERSIONS (FIXED LOGIC) ---
       - name: Get versions from gradle.properties
         id: get-versions
         run: |
-          # Read properties from the file
-          MOD_VERSION=$(grep 'mod_version=' gradle.properties | cut -d'=' -f2 | tr -d '\n\r')
-          MC_VERSION=$(grep 'minecraft_version=' gradle.properties | cut -d'=' -f2 | tr -d '\n\r')
+          # Use AWK to robustly read and clean MOD_VERSION
+          MOD_VERSION=$(awk -F'=' '/^mod_version=/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' gradle.properties)
+          
+          # Use AWK to robustly read and clean MC_VERSION
+          MC_VERSION=$(awk -F'=' '/^minecraft_version=/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' gradle.properties)
           
           # Set as output for the 'release' job
           echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
@@ -65,7 +67,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: freqqer-build-jars
-          # Upload the entire 'build/libs' directory contents
           path: build/libs/
 
   # --- RELEASE JOB ---
@@ -86,19 +87,19 @@ jobs:
           name: freqqer-build-jars
           path: build/libs/
 
-      - name: List downloaded artifacts
-        run: ls build/libs
+      # The manual extraction step is removed as download-artifact@v4 handles unzipping.
 
       - name: Set Release Variables
         id: set-release-vars
         run: |
-          # The next steps still need these variables
+          # Variables are read from the successful build job output
           MOD_VERSION=${{ needs.build.outputs.mod_version }}
           MC_VERSION=${{ needs.build.outputs.minecraft_version }}
           
           TAG="$MOD_VERSION-$MC_VERSION"
           TITLE="Freqqer v$MOD_VERSION ($MC_VERSION)"
           
+          # Sets variables for the next step and the final output
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
           echo "TITLE=$TITLE" >> $GITHUB_OUTPUT
           echo "MOD_VERSION=$MOD_VERSION" >> $GITHUB_ENV
@@ -106,11 +107,11 @@ jobs:
 
       - name: Rename Artifacts
         run: |
-          cd build/libs # This should now succeed as build/libs/ is created by the download step
+          cd build/libs 
           MOD_VERSION="${{ env.MOD_VERSION }}"
           MC_VERSION="${{ env.MC_VERSION }}"
           
-          # These moves should now find the files (e.g., freqqer-1.4.jar) in the current directory
+          # These moves should now succeed because MOD_VERSION is populated (e.g., '1.4')
           mv freqqer-"$MOD_VERSION".jar freqqer-"$MOD_VERSION"-fabric-"$MC_VERSION".jar 
           mv freqqer-"$MOD_VERSION"-sources.jar freqqer-"$MOD_VERSION"-fabric-"$MC_VERSION"-sources.jar
 
@@ -123,5 +124,6 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+          # Upload the newly renamed files
           files: |
             build/libs/freqqer-*-fabric-*.jar
