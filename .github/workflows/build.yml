@@ -107,54 +107,39 @@ jobs:
           # Read necessary outputs from the build job
           MOD_VERSION="${{ needs.build.outputs.mod_version }}"
           MC_VERSION="${{ needs.build.outputs.minecraft_version }}"
-          
+
           # Calculate output properties
           TAG="$MOD_VERSION-$MC_VERSION"
           TITLE="Freqqer v$MOD_VERSION ($MC_VERSION)"
-          
-          # Calculate the file paths required for the softprops action (Source::Destination)
+
+          # Calculate the file paths
           SOURCE_MAIN_JAR="build/libs/freqqer-$MOD_VERSION.jar"
           SOURCE_SOURCES_JAR="build/libs/freqqer-$MOD_VERSION-sources.jar"
           DEST_MAIN_JAR="freqqer-$MOD_VERSION-fabric-$MC_VERSION.jar"
           DEST_SOURCES_JAR="freqqer-$MOD_VERSION-fabric-$MC_VERSION-sources.jar"
-          
+
           # Export to environment for the softprops action to use in its 'files' block
           echo "SOURCE_MAIN_JAR=$SOURCE_MAIN_JAR" >> $GITHUB_ENV
           echo "SOURCE_SOURCES_JAR=$SOURCE_SOURCES_JAR" >> $GITHUB_ENV
           echo "DEST_MAIN_JAR=$DEST_MAIN_JAR" >> $GITHUB_ENV
           echo "DEST_SOURCES_JAR=$DEST_SOURCES_JAR" >> $GITHUB_ENV
-          
+
           # Export tag and title as step outputs
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
-
-      - name: List artifacts and environment variables
-        run: |
-          ls build/libs/
-          echo $MOD_VERSION
-          echo $SOURCE_MAIN_JAR
-          echo $SOURCE_SOURCES_JAR
-          echo $DEST_MAIN_JAR
-          echo $DEST_SOURCES_JARs
 
       - name: Generate Release Notes and Upload Files
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.set-release-vars.outputs.tag }}
           name: ${{ steps.set-release-vars.outputs.title }}
-
-          # Provides introductory text and enables commit-based notes
           body: |
             ## Changes in this Release
-            
-            This is an automated release. See the generated notes below for commit history.
 
+            This is an automated release. See the generated notes below for commit history.
           generate_release_notes: true
           draft: false
           prerelease: false
-
-          # FIX: Use the calculated Source::Destination paths from the environment
-          # variables set in the previous step. This bypasses the shell mv command.
           files: |
             ${{ env.SOURCE_MAIN_JAR }}::${{ env.DEST_MAIN_JAR }}
             ${{ env.SOURCE_SOURCES_JAR }}::${{ env.DEST_SOURCES_JAR }}
