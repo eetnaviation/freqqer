@@ -101,6 +101,9 @@ jobs:
           name: freqqer-build-jars
           path: build/libs/
 
+      - name: List build/libs contents before release
+        run: ls -al build/libs/
+
       - name: Set Release Variables and File Paths (Reliable Output)
         id: set-release-vars
         run: |
@@ -113,8 +116,8 @@ jobs:
           TITLE="Freqqer v$MOD_VERSION ($MC_VERSION)"
 
           # Calculate the file paths
-          SOURCE_MAIN_JAR="build/libs/freqqer-$MOD_VERSION.jar"
-          SOURCE_SOURCES_JAR="build/libs/freqqer-$MOD_VERSION-sources.jar"
+          SOURCE_MAIN_JAR="freqqer-$MOD_VERSION.jar"
+          SOURCE_SOURCES_JAR="freqqer-$MOD_VERSION-sources.jar"
           DEST_MAIN_JAR="freqqer-$MOD_VERSION-fabric-$MC_VERSION.jar"
           DEST_SOURCES_JAR="freqqer-$MOD_VERSION-fabric-$MC_VERSION-sources.jar"
 
