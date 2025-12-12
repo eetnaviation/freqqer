@@ -38,7 +38,7 @@ jobs:
       - name: Make ./gradlew executable
         run: chmod +x ./gradlew
 
-      # --- 2. GET VERSIONS (FIXED LOGIC) ---
+      # --- 2. GET VERSIONS (FIXED LOGIC - AWK) ---
       - name: Get versions from gradle.properties
         id: get-versions
         run: |
@@ -87,32 +87,35 @@ jobs:
           name: freqqer-build-jars
           path: build/libs/
 
-      # The manual extraction step is removed as download-artifact@v4 handles unzipping.
-
-      - name: Set Release Variables
+      - name: Set Release Variables (FIXED ACCESS)
         id: set-release-vars
         run: |
-          # Variables are read from the successful build job output
-          MOD_VERSION=${{ needs.build.outputs.mod_version }}
-          MC_VERSION=${{ needs.build.outputs.minecraft_version }}
+          # Use expression syntax to safely read outputs from the dependency job
+          MOD_VERSION="${{ needs.build.outputs.mod_version }}"
+          MC_VERSION="${{ needs.build.outputs.minecraft_version }}"
           
           TAG="$MOD_VERSION-$MC_VERSION"
           TITLE="Freqqer v$MOD_VERSION ($MC_VERSION)"
           
-          # Sets variables for the next step and the final output
-          echo "TAG=$TAG" >> $GITHUB_OUTPUT
-          echo "TITLE=$TITLE" >> $GITHUB_OUTPUT
+          # Export to environment for subsequent shell steps (Rename Artifacts)
           echo "MOD_VERSION=$MOD_VERSION" >> $GITHUB_ENV
           echo "MC_VERSION=$MC_VERSION" >> $GITHUB_ENV
+          
+          # Export to outputs for the Release Notes action
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "TITLE=$TITLE" >> $GITHUB_OUTPUT
 
       - name: Rename Artifacts
         run: |
           cd build/libs 
+          # Access variables from the environment set in the previous step
           MOD_VERSION="${{ env.MOD_VERSION }}"
           MC_VERSION="${{ env.MC_VERSION }}"
           
-          # These moves should now succeed because MOD_VERSION is populated (e.g., '1.4')
+          # Rename main JAR (e.g., freqqer-1.4.jar -> freqqer-1.4-fabric-1.21.9.jar)
           mv freqqer-"$MOD_VERSION".jar freqqer-"$MOD_VERSION"-fabric-"$MC_VERSION".jar 
+          
+          # Rename sources JAR
           mv freqqer-"$MOD_VERSION"-sources.jar freqqer-"$MOD_VERSION"-fabric-"$MC_VERSION"-sources.jar
 
       - name: Generate Release Notes
@@ -124,6 +127,5 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
-          # Upload the newly renamed files
           files: |
             build/libs/freqqer-*-fabric-*.jar
