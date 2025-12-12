@@ -11,16 +11,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      # Expose version properties for the release job
+      mod_version: ${{ steps.get-versions.outputs.mod_version }}
+      minecraft_version: ${{ steps.get-versions.outputs.minecraft_version }}
 
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
 
+      # --- 1. SETUP ---
       - name: Set up JDK 21 (Temurin)
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: 'temurin'  # Use Temurin for OpenJDK 21
+          distribution: 'temurin'
+
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
@@ -28,20 +34,99 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
+
       - name: Make ./gradlew executable
         run: chmod +x ./gradlew
-        
+
+      # --- 2. GET VERSIONS ---
+      - name: Get versions from gradle.properties
+        id: get-versions
+        run: |
+          MOD_VERSION=$(grep 'mod_version=' gradle.properties | cut -d'=' -f2 | tr -d '\n\r')
+          MC_VERSION=$(grep 'minecraft_version=' gradle.properties | cut -d'=' -f2 | tr -d '\n\r')
+          echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
+          echo "minecraft_version=$MC_VERSION" >> $GITHUB_OUTPUT
+
+      # --- 3. BUILD ---
       - name: Clean previous gradle artifacts
         run: ./gradlew clean
-        
+
       - name: Set up gradle and mod dependencies
         run: ./gradlew --refresh-dependencies
 
       - name: Build the mod
+        # The build step ensures the JARs are created in build/libs/
         run: ./gradlew build
 
-      - name: Upload artifacts as zip
+      # --- 4. ARTIFACTS UPLOAD (Temporary Storage for Release Job) ---
+      - name: Upload Build Artifacts for Release
         uses: actions/upload-artifact@v4
         with:
-          name: freqqer-workflow-artifacts-zip
-          path: build/libs/*.jar
+          name: freqqer-build-jars
+          path: build/libs/
+          # Ensure both the main JAR and sources JAR are uploaded
+
+  # --- RELEASE JOB ---
+  release:
+    needs: build # This job runs only after the build job is successful
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Only runs on push to main branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        # Fetch history to generate full release notes
+        with:
+          fetch-depth: 0
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: freqqer-build-jars
+          path: build/libs/
+
+      - name: Set Release Variables
+        id: set-release-vars
+        run: |
+          MOD_VERSION=${{ needs.build.outputs.mod_version }}
+          MC_VERSION=${{ needs.build.outputs.minecraft_version }}
+          TAG="$MOD_VERSION-$MC_VERSION"
+          TITLE="Freqqer v$MOD_VERSION ($MC_VERSION)"
+          
+          # Sets these variables for the next step
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "TITLE=$TITLE" >> $GITHUB_OUTPUT
+          echo "MOD_VERSION=$MOD_VERSION" >> $GITHUB_ENV
+          echo "MC_VERSION=$MC_VERSION" >> $GITHUB_ENV
+
+      - name: Rename Artifacts
+        # Renames the JARs to match the required format for the release
+        run: |
+          cd build/libs
+          MOD_VERSION="${{ env.MOD_VERSION }}"
+          MC_VERSION="${{ env.MC_VERSION }}"
+          
+          # Rename main JAR (assuming the standard naming convention of fabric-loom)
+          mv freqqer-"$MOD_VERSION".jar freqqer-"$MOD_VERSION"-fabric-"$MC_VERSION".jar
+          
+          # Rename sources JAR (assuming the standard naming convention of fabric-loom)
+          mv freqqer-"$MOD_VERSION"-sources.jar freqqer-"$MOD_VERSION"-fabric-"$MC_VERSION"-sources.jar
+
+      - name: Generate Release Notes
+        id: generate_notes
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.set-release-vars.outputs.TAG }}
+          name: ${{ steps.set-release-vars.outputs.TITLE }}
+          body_prefixed: true
+          # Generates commit-based release notes
+          body: |
+            ## ✨ Changes in this Release
+            
+            ${{ github.event_name == 'push' && format('Last commit hash: {0}', github.sha) || 'No release notes generated for this PR.' }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          # Attach the renamed artifacts
+          files: |
+            build/libs/freqqer-*-fabric-*.jar
