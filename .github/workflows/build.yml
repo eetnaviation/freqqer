@@ -129,7 +129,7 @@ jobs:
 
           # Provides introductory text and enables commit-based notes
           body: |
-            ## ✨ Changes in this Release
+            ## Changes in this Release
             
             This is an automated release. See the generated notes below for commit history.
 
