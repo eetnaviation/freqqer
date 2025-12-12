@@ -1,5 +1,10 @@
 name: Build Minecraft Fabric Mod JAR
 
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
 on:
   push:
     branches:
