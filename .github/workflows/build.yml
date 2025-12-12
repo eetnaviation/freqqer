@@ -50,15 +50,17 @@ jobs:
       - name: Get versions from gradle.properties
         id: get-versions
         run: |
-          # Use AWK to robustly read and clean properties from gradle.properties
-          MOD_VERSION=$(awk -F'=' '/^mod_version=/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' gradle.properties)
-          MC_VERSION=$(awk -F'=' '/^minecraft_version=/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' gradle.properties)
-          ARCHIVES_BASE_NAME=$(awk -F'=' '/^archives_base_name=/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' gradle.properties)
+          # Enhanced AWK extraction to handle whitespace and tabs around '='
+
+          MOD_VERSION=$(awk -F'=' '/^[[:space:]]*mod_version[[:space:]]*=/ {gsub(/[[:space:]]*/, "", $1); gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}' gradle.properties)
+          MC_VERSION=$(awk -F'=' '/^[[:space:]]*minecraft_version[[:space:]]*=/ {gsub(/[[:space:]]*/, "", $1); gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}' gradle.properties)
+          ARCHIVES_BASE_NAME=$(awk -F'=' '/^[[:space:]]*archives_base_name[[:space:]]*=/ {gsub(/[[:space:]]*/, "", $1); gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}' gradle.properties)
 
           # Set as output for the 'release' job
           echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
           echo "minecraft_version=$MC_VERSION" >> $GITHUB_OUTPUT
           echo "archives_base_name=$ARCHIVES_BASE_NAME" >> $GITHUB_OUTPUT
+      
 
       - name: Debug output values
         run: |
