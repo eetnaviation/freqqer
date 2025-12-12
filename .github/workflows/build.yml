@@ -60,6 +60,12 @@ jobs:
           echo "minecraft_version=$MC_VERSION" >> $GITHUB_OUTPUT
           echo "archives_base_name=$ARCHIVES_BASE_NAME" >> $GITHUB_OUTPUT
 
+      - name: Debug output values
+        run: |
+          echo "MOD_VERSION=${MOD_VERSION}"
+          echo "MC_VERSION=${MC_VERSION}"
+          echo "ARCHIVES_BASE_NAME=${ARCHIVES_BASE_NAME}"
+
       # --- 3. BUILD ---
       - name: Clean previous gradle artifacts
         run: ./gradlew clean
@@ -123,6 +129,7 @@ jobs:
       - name: List artifacts and environment variables
         run: |
           ls build/libs/
+          echo $MOD_VERSION
           echo $SOURCE_MAIN_JAR
           echo $SOURCE_SOURCES_JAR
           echo $DEST_MAIN_JAR
