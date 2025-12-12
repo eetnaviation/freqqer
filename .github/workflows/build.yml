@@ -99,15 +99,14 @@ jobs:
           # Read necessary outputs from the build job
           MOD_VERSION="${{ needs.build.outputs.mod_version }}"
           MC_VERSION="${{ needs.build.outputs.minecraft_version }}"
-          ARCHIVES_BASE_NAME="${{ needs.build.outputs.archives_base_name }}"
           
           # Calculate output properties
           TAG="$MOD_VERSION-$MC_VERSION"
           TITLE="Freqqer v$MOD_VERSION ($MC_VERSION)"
           
           # Calculate the file paths required for the softprops action (Source::Destination)
-          SOURCE_MAIN_JAR="build/libs/$ARCHIVES_BASE_NAME-$MOD_VERSION.jar"
-          SOURCE_SOURCES_JAR="build/libs/$ARCHIVES_BASE_NAME-$MOD_VERSION-sources.jar"
+          SOURCE_MAIN_JAR="build/libs/freqqer-$MOD_VERSION.jar"
+          SOURCE_SOURCES_JAR="build/libs/freqqer-$MOD_VERSION-sources.jar"
           DEST_MAIN_JAR="freqqer-$MOD_VERSION-fabric-$MC_VERSION.jar"
           DEST_SOURCES_JAR="freqqer-$MOD_VERSION-fabric-$MC_VERSION-sources.jar"
           
@@ -121,8 +120,13 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
 
-      - name: List artifacts
-        run: ls build/libs/
+      - name: List artifacts and environment variables
+        run: |
+          ls build/libs/
+          echo $SOURCE_MAIN_JAR
+          echo $SOURCE_SOURCES_JAR
+          echo $DEST_MAIN_JAR
+          echo $DEST_SOURCES_JARs
 
       - name: Generate Release Notes and Upload Files
         uses: softprops/action-gh-release@v2
